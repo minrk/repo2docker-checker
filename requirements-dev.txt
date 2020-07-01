@@ -1,5 +1,5 @@
 flake8
-nbconvert
+nbconvert[execute]
 pre-commit
 pytest
 pytest-cov
