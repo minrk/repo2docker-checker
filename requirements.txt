@@ -1,0 +1,2 @@
+# requirements.txt with unsatisfiable requirements
+jupyter-repo2docker==0.0.0.99999
