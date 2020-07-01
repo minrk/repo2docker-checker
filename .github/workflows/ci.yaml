@@ -31,11 +31,16 @@ jobs:
         path: |
           docker-cache
         key: docker-cache
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements-dev.txt -r requirements.txt
-        python -m ipykernel install
     - name: Show test environment
       run: |
         pip freeze
