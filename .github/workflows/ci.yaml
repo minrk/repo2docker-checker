@@ -31,7 +31,7 @@ jobs:
     - name: Show test environment
       run: |
         pip freeze
-    - name: pre-commit check
+    - name: pre-commit check (run `pre-commit run --all-files` and push to fix any failures)
       run: |
         pre-commit run --all-files
     - name: Test with pytest
