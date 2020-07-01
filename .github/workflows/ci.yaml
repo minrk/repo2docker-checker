@@ -31,7 +31,8 @@ jobs:
         path: |
           docker-cache
         key: docker-cache
-    - uses: actions/cache@v2
+    - name: Cache pip
+      uses: actions/cache@v2
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements*.txt') }}
@@ -50,6 +51,7 @@ jobs:
     - name: Restore docker image cache
       run: |
         mkdir -p docker-cache
+        shopt -s nullglob
         for tar in docker-cache/*.tar; do
           echo "loading docker cache $tar"
           docker load < "$tar"
