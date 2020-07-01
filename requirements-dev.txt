@@ -2,3 +2,4 @@ flake8
 nbconvert
 pre-commit
 pytest
+pytest-cov
