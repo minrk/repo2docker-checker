@@ -21,6 +21,7 @@ ruamel.yaml.clib==0.2.0   # via ruamel.yaml
 semver==2.10.2            # via jupyter-repo2docker
 six==1.15.0               # via docker, traitlets, websocket-client
 toml==0.10.1              # via jupyter-repo2docker
+tornado==6.0.4
 traitlets==4.3.3          # via jupyter-repo2docker
 urllib3==1.25.9           # via requests
 websocket-client==0.57.0  # via docker
