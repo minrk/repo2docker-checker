@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - master
+      - docker-cache
   pull_request:
     branches:
       - master
@@ -24,6 +25,12 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Cache docker images
+      uses: actions/cache@v2
+      with:
+        path: |
+          docker-cache
+        key: docker-cache
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -35,9 +42,22 @@ jobs:
     - name: pre-commit check (run `pre-commit run --all-files` and push to fix any failures)
       run: |
         pre-commit run --all-files
+    - name: Restore docker image cache
+      run: |
+        mkdir -p docker-cache
+        for tar in docker-cache/*.tar; do
+          echo "loading docker cache $tar"
+          docker load < "$tar"
+        done
+        echo "$(docker images -aq | wc -l) images loaded in docker"
     - name: Test with pytest
       run: |
         pytest -vsx --cov=./ --cov-report=xml
+    - name: Export docker images for cache
+      run: |
+        mkdir -p docker-cache
+        echo "Saving $(docker images -aq | wc -l) images"
+        docker save $(docker images -aq) > docker-cache/images-${{ matrix.python-version }}.tar
     - name: Codecov
       uses: codecov/codecov-action@v1.0.7
       with:
