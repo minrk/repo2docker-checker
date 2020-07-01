@@ -16,8 +16,8 @@ jupyter-repo2docker==0.11.0
 markupsafe==1.1.1         # via jinja2
 python-json-logger==0.1.11  # via jupyter-repo2docker
 requests==2.24.0          # via docker
-ruamel.yaml.clib==0.2.0   # via ruamel.yaml
 ruamel.yaml==0.16.10      # via jupyter-repo2docker
+ruamel.yaml.clib==0.2.0   # via ruamel.yaml
 semver==2.10.2            # via jupyter-repo2docker
 six==1.15.0               # via docker, traitlets, websocket-client
 toml==0.10.1              # via jupyter-repo2docker

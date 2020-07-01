@@ -3,12 +3,11 @@
 
 Runs a single test
 """
-
 import argparse
 import importlib
+import logging
 import os
 import tempfile
-import logging
 
 import tornado.log
 
@@ -57,7 +56,7 @@ test_functions = {
 
 def main():
     tornado.log.enable_pretty_logging()
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.INFO)
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(

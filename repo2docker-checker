@@ -8,23 +8,23 @@ Result types:
   output: path to log
 
 """
-
 import argparse
 import json
 import logging
 import os
 import sys
 import tempfile
-from collections import defaultdict, namedtuple
+from collections import defaultdict
+from collections import namedtuple
 from datetime import datetime
-from subprocess import run, STDOUT
+from subprocess import run
+from subprocess import STDOUT
 from threading import Thread
 from urllib.parse import urlparse
 
 import docker
-import tornado.log
 import repo2docker
-
+import tornado.log
 from repo2docker.contentproviders.git import Git
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -102,7 +102,7 @@ def build_repo(repo, resolved_ref, checkout_path, build_log_file):
                     checkout_path,
                 ],
                 stdout=stdout,
-                stderr=stdout,
+                stderr=STDOUT,
                 check=True,
             )
         finally:
@@ -162,6 +162,7 @@ def run_one_test(image, kind, argument, run_dir):
 
 
 def run_tests(image, checkout_path, run_dir):
+    """Find tests to run and run them"""
     for nb_path in find_notebooks(checkout_path):
         try:
             yield run_one_test(image, "notebook", nb_path, run_dir)
@@ -262,8 +263,8 @@ def test_one_repo(repo, ref="master", run_dir="./runs"):
     else:
         add_result(kind="build", test_id="build", success=True, path=build_log_file)
 
-    for test in run_tests(image, checkout_path, repo_run_dir):
-        add_result(**test)
+    for result in run_tests(image, checkout_path, repo_run_dir):
+        add_result(**result)
 
     return result_file, results
 
@@ -273,14 +274,15 @@ def print_summary(results, result_file):
     """
     build_result = results[0]
     print(
-        f"Result summary for {build_result.repo}@{build_result.ref}-{build_result.resolved_ref} ({result_file}):"
+        f"Result summary for {build_result.repo}@{build_result.ref}-{build_result.resolved_ref}:"
     )
+    print(f"  Result file: {result_file}")
     if not build_result.success:
         print(f"Build failed, see {build_result.path} for details")
         return
 
     if len(results) == 1:
-        print(f"No tests found!")
+        print("  No tests found!")
         return
 
     counters = defaultdict(int)
