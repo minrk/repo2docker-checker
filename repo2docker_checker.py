@@ -76,7 +76,7 @@ def clone_repo(repo, ref):
     return checkout_path, resolved_ref
 
 
-def build_repo(repo, resolved_ref, checkout_path, build_log_file):
+def build_repo(repo, resolved_ref, checkout_path, build_log_file, force_build=False):
     """build one repo"""
 
     image_id = make_image_id(repo, resolved_ref)
@@ -88,7 +88,12 @@ def build_repo(repo, resolved_ref, checkout_path, build_log_file):
         pass
     else:
         log.info(f"Already have image {image_id}")
-        return image_id, checkout_path
+        if not force_build:
+            with open(build_log_file, "w") as f:
+                f.write(f"Image {image_id} already built")
+            return image_id, checkout_path
+
+    log.info(f"Building image {image_id} for {repo}@{resolved_ref}")
 
     with tee(build_log_file) as stdout:
         try:
@@ -210,7 +215,7 @@ TestResult = namedtuple(
 )
 
 
-def test_one_repo(repo, ref="master", run_dir="./runs"):
+def test_one_repo(repo, ref="master", run_dir="./runs", force_build=False):
     repo_run_dir = os.path.join(run_dir, repo_slug(repo))
     log_dir = os.path.join(repo_run_dir, "logs")
     result_dir = os.path.join(repo_run_dir, "results")
@@ -255,6 +260,7 @@ def test_one_repo(repo, ref="master", run_dir="./runs"):
             resolved_ref=resolved_ref,
             checkout_path=checkout_path,
             build_log_file=build_log_file,
+            force_build=force_build,
         )
     except Exception:
         # record build failure
@@ -312,6 +318,11 @@ def main(argv=None):
         default="./runs",
         help="directory in which to store results",
     )
+    parser.add_argument(
+        "--force-build",
+        action="store_true",
+        help="Force rebuild of images, even if an image already exists",
+    )
     parser.add_argument("repos", nargs="+", help="repos to test")
     opts = parser.parse_args(argv)
 
@@ -325,7 +336,9 @@ def main(argv=None):
         else:
             ref = "master"
         try:
-            result_file, results = test_one_repo(repo, ref=ref, run_dir=opts.run_dir)
+            result_file, results = test_one_repo(
+                repo, ref=ref, run_dir=opts.run_dir, force_build=opts.force_build
+            )
         except Exception:
             log.exception(f"Error testing {repo}@{ref}")
         else:
