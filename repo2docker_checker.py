@@ -303,7 +303,7 @@ def print_summary(results, result_file):
         print("OK!")
 
 
-def main():
+def main(argv=None):
     tornado.log.enable_pretty_logging()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -313,7 +313,7 @@ def main():
         help="directory in which to store results",
     )
     parser.add_argument("repos", nargs="+", help="repos to test")
-    opts = parser.parse_args()
+    opts = parser.parse_args(argv)
 
     for repo in opts.repos:
         if "://" not in repo:
