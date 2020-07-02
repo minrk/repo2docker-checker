@@ -9,14 +9,16 @@ Result types:
 
 """
 import argparse
-import json
+import csv
 import logging
 import os
 import sys
 import tempfile
 from collections import defaultdict
 from collections import namedtuple
+from contextlib import contextmanager
 from datetime import datetime
+from subprocess import check_output
 from subprocess import run
 from subprocess import STDOUT
 from threading import Thread
@@ -36,6 +38,16 @@ run_id = os.environ.get("RUN_ID", now.strftime("%Y-%m-%dT%H.%M"))
 quiet = False
 
 CHUNK_SIZE = 64
+
+
+@contextmanager
+def cd(path):
+    try:
+        save_cwd = os.getcwd()
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(save_cwd)
 
 
 def echo(text):
@@ -82,7 +94,11 @@ def clone_repo(repo, ref):
         echo(line)
 
     resolved_ref = cp.content_id or ref
-    return checkout_path, resolved_ref
+    with cd(checkout_path):
+        output = check_output(["git", "log", "-1", "--date=iso-strict", "--format=%ad"])
+        timestamp = output.decode("utf8").strip()
+    log.info(f"Cloned {repo}@{ref}: commit {resolved_ref} at {timestamp}")
+    return checkout_path, resolved_ref, timestamp
 
 
 def build_repo(repo, resolved_ref, checkout_path, build_log_file, force_build=False):
@@ -235,6 +251,7 @@ TestResult = namedtuple(
         "repo",
         "ref",
         "resolved_ref",
+        "last_modified",
         "kind",
         "test_id",
         "success",
@@ -255,10 +272,13 @@ def test_one_repo(repo, ref="master", run_dir="./runs", force_build=False):
             os.makedirs(d)
         except FileExistsError:
             pass
-    result_file = os.path.join(result_dir, f"results-{ref}-{run_id}.json")
+    result_file = os.path.join(result_dir, f"results-{ref}-{run_id}.csv")
+    with open(result_file, "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(TestResult._fields)
     build_log_file = os.path.join(log_dir, f"build-{ref}-{run_id}.txt")
 
-    checkout_path, resolved_ref = clone_repo(repo, ref)
+    checkout_path, resolved_ref, last_modified = clone_repo(repo, ref)
 
     log.info(f"Building {repo}@{ref} in {repo_run_dir} with run id {run_id}")
     results = []
@@ -268,22 +288,24 @@ def test_one_repo(repo, ref="master", run_dir="./runs", force_build=False):
         log.info(
             f"Recording test result: repo={repo}, kind={kind}, test_id={test_id}, {'success' if success else 'failure'}"
         )
-        results.append(
-            TestResult(
-                repo,
-                ref,
-                resolved_ref,
-                kind,
-                test_id,
-                success,
-                path,
-                timestamp,
-                run_id,
-                repo2docker.__version__,
-            )
+        result = TestResult(
+            repo,
+            ref,
+            resolved_ref,
+            last_modified,
+            kind,
+            test_id,
+            success,
+            path,
+            timestamp,
+            run_id,
+            repo2docker.__version__,
         )
-        with open(result_file, "w") as f:
-            json.dump(results, f, indent=1)
+        results.append(result)
+
+        with open(result_file, "a") as f:
+            writer = csv.writer(f)
+            writer.writerow(result)
 
     try:
         image, checkout_path = build_repo(
