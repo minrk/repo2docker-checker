@@ -37,7 +37,7 @@ timestamp = now.isoformat()
 run_id = os.environ.get("RUN_ID", now.strftime("%Y-%m-%dT%H.%M"))
 quiet = False
 
-CHUNK_SIZE = 64
+CHUNK_SIZE = 16
 
 
 @contextmanager
