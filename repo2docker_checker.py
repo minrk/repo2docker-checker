@@ -126,58 +126,80 @@ def find_notebooks(path):
                 yield os.path.relpath(os.path.join(parent, fname), path)
 
 
-def run_one_test(image, kind, argument, run_dir):
+def run_one_test(image, kind, argument, run_dir, log_file):
+    """Run a single test in a container
+
+    Calls inrepo with the given test and input in the image,
+    mounting run_dir as a volume
+    """
     d = docker.from_env()
-    try:
-        for line in d.containers.run(
-            image,
-            # auto_remove=True,
-            detach=False,
-            stream=True,
-            stdout=False,
-            stderr=True,
-            environment={"PYTHONUNBUFFERED": "1"},
-            volumes={here: {"bind": "/io", "mode": "rw"}},
-            command=[
-                "python3",
-                "-u",
-                "/io/inrepo.py",
-                "--output-dir",
-                os.path.join("/io", os.path.relpath(run_dir, here)),
-                kind,
-                argument,
-            ],
-        ):
-            print("line!", line, type(line))
-            sys.stderr.write(line.decode("utf8"))
-    except docker.errors.ContainerError as e:
-        sys.stderr.write(e.stderr.decode("utf8"))
-        e.container.remove()
-        raise
-    else:
-        # remove
-        pass
+    with open(log_file, "w") as log_f:
+
+        def write(text):
+            """write text to both stderr and the log file
+
+            decodes bytes if not already text
+            """
+            if isinstance(text, bytes):
+                text = text.decode("utf8", "replace")
+
+            for f in (log_file, sys.stderr):
+                f.write(text)
+
+        try:
+            container = d.containers.run(
+                image,
+                detach=True,
+                volumes={
+                    here: {"bind": "/src", "mode": "ro"},
+                    os.path.abspath(run_dir): {"bind": "/io", "mode": "rw"},
+                },
+                command=[
+                    "python3",
+                    "-u",
+                    "/src/inrepo.py",
+                    "--output-dir",
+                    "/io",
+                    kind,
+                    argument,
+                ],
+            )
+        except docker.errors.ContainerError as e:
+            write(e.stderr)
+            e.container.remove()
+            raise
+
+        for chunk in container.logs(stdout=True, stderr=True, follow=True, stream=True):
+            write(chunk)
+
+        status = container.wait()
+        message = f"\nContainer exited with status: {status}\n"
+        write(message)
+        container.remove(force=True)
 
     return {
         "kind": "notebook",
-        "success": True,
+        "success": status["StatusCode"] == 0,
         "test_id": argument,
-        "path": "x",
+        "path": log_file,
     }
 
 
 def run_tests(image, checkout_path, run_dir):
     """Find tests to run and run them"""
     for nb_path in find_notebooks(checkout_path):
+        test_log_file = os.path.join(
+            run_dir, "logs", f"test-notebook-{nb_path.replace('/', '-')}-{run_id}.txt"
+        )
         try:
-            yield run_one_test(image, "notebook", nb_path, run_dir)
+            yield run_one_test(image, "notebook", nb_path, run_dir, test_log_file)
         except Exception:
             log.exception(f"Error running test {nb_path}")
             yield {
                 "kind": "notebook",
                 "success": False,
                 "test_id": nb_path,
-                "path": "x",
+                "path": test_log_file,
             }
 
 
@@ -275,7 +297,7 @@ def test_one_repo(repo, ref="master", run_dir="./runs", force_build=False):
     return result_file, results
 
 
-def print_summary(results, result_file):
+def print_summary(results, result_file, run_dir):
     """Print a summary of th
     """
     build_result = results[0]
@@ -284,7 +306,9 @@ def print_summary(results, result_file):
     )
     print(f"  Result file: {result_file}")
     if not build_result.success:
-        print(f"Build failed, see {build_result.path} for details")
+        print(
+            f"Build failed, see {os.path.join(run_dir, build_result.path)} for details"
+        )
         return
 
     if len(results) == 1:
@@ -302,9 +326,9 @@ def print_summary(results, result_file):
     for key, count in sorted(counters.items()):
         print(f"  {key}: {count}")
     if failures:
-        print(f"  {len(failures)} failures:")
+        print(f"  {len(failures)} failure{'s' if len(failures) != 1 else ''}:")
         for r in failures:
-            print(f"    {r.kind} {r.test_id}: {r.path}")
+            print(f"    {r.kind} {r.test_id}: {os.path.join(run_dir, r.path)}")
     else:
         print("OK!")
 
@@ -342,7 +366,7 @@ def main(argv=None):
         except Exception:
             log.exception(f"Error testing {repo}@{ref}")
         else:
-            print_summary(results, result_file)
+            print_summary(results, result_file, opts.run_dir)
 
 
 if __name__ == "__main__":
