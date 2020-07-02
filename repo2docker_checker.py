@@ -33,8 +33,16 @@ log = logging.getLogger(__name__)
 now = datetime.now()
 timestamp = now.isoformat()
 run_id = os.environ.get("RUN_ID", now.strftime("%Y-%m-%dT%H.%M"))
+quiet = False
 
 CHUNK_SIZE = 64
+
+
+def echo(text):
+    """Echo output to stderr if not quiet"""
+    if quiet:
+        return
+    sys.stderr.write(text)
 
 
 def _tee(fd, fname):
@@ -45,7 +53,7 @@ def _tee(fd, fname):
                 chunk = pipe_f.read(CHUNK_SIZE)
                 if not chunk:
                     return
-                sys.stderr.write(chunk)
+                echo(chunk)
                 log_f.write(chunk)
 
 
@@ -62,6 +70,7 @@ def clone_repo(repo, ref):
 
     td = tempfile.mkdtemp(prefix=f"r2d-test-{run_id}")
     checkout_path = os.path.join(td, slug)
+    log.info(f"Cloning {repo}@{ref} to {checkout_path}")
     try:
         os.makedirs(checkout_path)
     except FileExistsError:
@@ -69,8 +78,8 @@ def clone_repo(repo, ref):
 
     cp = Git()
     spec = cp.detect(repo, ref=ref)
-    for line in cp.fetch(spec, output_dir=checkout_path, yield_output=sys.stderr.write):
-        sys.stderr.write(line)
+    for line in cp.fetch(spec, output_dir=checkout_path, yield_output=echo):
+        echo(line)
 
     resolved_ref = cp.content_id or ref
     return checkout_path, resolved_ref
@@ -143,8 +152,8 @@ def run_one_test(image, kind, argument, run_dir, log_file):
             if isinstance(text, bytes):
                 text = text.decode("utf8", "replace")
 
-            for f in (log_file, sys.stderr):
-                f.write(text)
+            log_f.write(text)
+            echo(text)
 
         try:
             container = d.containers.run(
@@ -343,12 +352,20 @@ def main(argv=None):
         help="directory in which to store results",
     )
     parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Run more quietly: don't echo build & test output to stderr",
+    )
+    parser.add_argument(
         "--force-build",
         action="store_true",
         help="Force rebuild of images, even if an image already exists",
     )
     parser.add_argument("repos", nargs="+", help="repos to test")
     opts = parser.parse_args(argv)
+    global quiet
+    quiet = opts.quiet
 
     for repo in opts.repos:
         if "://" not in repo:
