@@ -1,0 +1,20 @@
+[build-system]
+requires = ["flit_core >=2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.metadata]
+dist-name = "repo2docker-checker"
+module = "repo2docker_checker"
+author = "Min RK"
+author-email = "benjaminrk@gmail.com"
+description-file = "README.md"
+home-page = "https://github.com/minrk/repo2docker_checker"
+requires = ["jupyter-repo2docker", "tornado"]
+requires-python = ">=3.6"
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+]
+
+[tool.flit.scripts]
+repo2docker-checker = "repo2docker_checker.checker:main"

@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-import inrepo
+from repo2docker_checker import inrepo
 
 
 def test_import_fails():
