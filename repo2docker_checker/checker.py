@@ -235,13 +235,11 @@ def repo_slug(url):
         url = url[:-4]
     urlinfo = urlparse(url)
     return f"{urlinfo.hostname}{urlinfo.path}"
-    _, host_path = url.split("://", 1)
-    return host_path.replace("/", "-")
 
 
 def make_image_id(repo, ref):
     """Compute the image for a given repo & ref"""
-    slug = repo_slug(repo).replace("/", "-")
+    slug = repo_slug(repo).replace("/", "-").lower()
     return f"r2d-test-{slug}:{ref}"
 
 
