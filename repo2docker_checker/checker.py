@@ -317,6 +317,7 @@ def test_one_repo(repo, ref="master", run_dir="./runs", force_build=False):
         )
     except Exception:
         # record build failure
+        log.exception("Build failure")
         add_result(kind="build", test_id="build", success=False, path=build_log_file)
         return result_file, results
     else:
