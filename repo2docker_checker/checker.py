@@ -19,6 +19,7 @@ from collections import defaultdict
 from collections import namedtuple
 from contextlib import contextmanager
 from datetime import datetime
+from subprocess import CalledProcessError
 from subprocess import check_output
 from subprocess import run
 from subprocess import STDOUT
@@ -315,10 +316,13 @@ def test_one_repo(repo, ref="master", run_dir="./runs", force_build=False):
             force_build=force_build,
         )
     except Exception:
+        # log errors that won't be in the build log
+        # (these will usually be bugs in our script!)
+        if not isinstance(Exception, CalledProcessError):
+            log.exception("Build failure")
+            with open(build_log_file, "a") as f:
+                traceback.print_exc(file=f)
         # record build failure
-        log.exception("Build failure")
-        with open(build_log_file, "a") as f:
-            traceback.print_exc(file=f)
         add_result(kind="build", test_id="build", success=False, path=build_log_file)
         return result_file, results
     else:
