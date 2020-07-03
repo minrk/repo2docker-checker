@@ -14,6 +14,7 @@ import logging
 import os
 import sys
 import tempfile
+import traceback
 from collections import defaultdict
 from collections import namedtuple
 from contextlib import contextmanager
@@ -316,6 +317,8 @@ def test_one_repo(repo, ref="master", run_dir="./runs", force_build=False):
     except Exception:
         # record build failure
         log.exception("Build failure")
+        with open(build_log_file, "a") as f:
+            traceback.print_exc(file=f)
         add_result(kind="build", test_id="build", success=False, path=build_log_file)
         return result_file, results
     else:
