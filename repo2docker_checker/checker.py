@@ -37,9 +37,10 @@ log = logging.getLogger(__name__)
 now = datetime.now()
 timestamp = now.isoformat()
 run_id = os.environ.get("RUN_ID", now.strftime("%Y-%m-%dT%H.%M"))
+notebook_limit = 5
 quiet = False
 
-CHUNK_SIZE = 16
+CHUNK_SIZE = 2
 
 
 @contextmanager
@@ -214,7 +215,13 @@ def run_one_test(image, kind, argument, run_dir, log_file):
 
 def run_tests(image, checkout_path, run_dir):
     """Find tests to run and run them"""
-    for nb_path in find_notebooks(checkout_path):
+    notebooks = list(find_notebooks(checkout_path))
+    count = len(notebooks)
+    log.info(f"Found {count} to test")
+    if notebook_limit and count > notebook_limit:
+        log.info(f"Limiting to first {notebook_limit}/{count} notebooks")
+        notebooks = notebooks[:notebook_limit]
+    for nb_path in notebooks:
         test_log_file = os.path.join(
             run_dir, "logs", f"test-notebook-{nb_path.replace('/', '-')}-{run_id}.txt"
         )
@@ -371,6 +378,9 @@ def print_summary(results, result_file, run_dir):
 
 
 def main(argv=None):
+    global notebook_limit
+    global quiet
+
     tornado.log.enable_pretty_logging()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -386,14 +396,21 @@ def main(argv=None):
         help="Run more quietly: don't echo build & test output to stderr",
     )
     parser.add_argument(
+        "-n",
+        "--limit",
+        default=notebook_limit,
+        type=int,
+        help="Limit to this many notebook tests per repo",
+    )
+    parser.add_argument(
         "--force-build",
         action="store_true",
         help="Force rebuild of images, even if an image already exists",
     )
     parser.add_argument("repos", nargs="+", help="repos to test")
     opts = parser.parse_args(argv)
-    global quiet
     quiet = opts.quiet
+    notebook_limit = opts.limit
 
     for repo in opts.repos:
         if "://" not in repo:
