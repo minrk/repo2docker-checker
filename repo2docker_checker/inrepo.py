@@ -66,10 +66,9 @@ def run_notebook(nb_path, output_dir):
                 "Found no matching kernel for name={kernel_name}, language={kernel_language}"
             )
             summary_specs = [
-                f"name={name}, language={spec.get('language')}"
-                for name, spec in kernel_specs.items()
+                f"name={name}, language={info['spec'].get('language')}"
+                for name, info in kernel_specs.items()
             ]
-            summary_specs = [str(spec) for spec in kernel_specs.items()]
             log.warning(f"Found kernel specs: {'; '.join(summary_specs)}")
 
     exported = executenb(nb, cwd=os.path.dirname(nb_path), kernel_name=kernel_name)
