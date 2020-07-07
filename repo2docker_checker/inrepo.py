@@ -30,12 +30,49 @@ def run_notebook(nb_path, output_dir):
     """
 
     import nbformat
+    from jupyter_client.kernelspec import KernelSpecManager
     from nbconvert.preprocessors.execute import executenb
 
     log.info(f"Testing notebook {nb_path}")
     with open(nb_path) as f:
         nb = nbformat.read(f, as_version=4)
-    exported = executenb(nb, cwd=os.path.dirname(nb_path))
+
+    kernel_specs = KernelSpecManager().get_all_specs()
+    kernel_info = nb.metadata.get("kernelspec") or {}
+    kernel_name = kernel_info.get("name")
+    kernel_language = kernel_info.get("language") or ""
+    if kernel_name in kernel_specs:
+        log.info(f"Found kernel {kernel_name}")
+    elif kernel_language:
+        log.warning(
+            f"No such kernel {kernel_name}, falling back on kernel language={kernel_language}"
+        )
+        kernel_language = kernel_language.lower()
+        # no exact name match, re-implement js notebook fallback,
+        # using kernel language instead
+        # nbconvert does not implement this, but it should
+        for kernel_spec_name, kernel_info in kernel_specs.items():
+            if (
+                kernel_info.get("spec", {}).get("language", "").lower()
+                == kernel_language
+            ):
+                log.warning(
+                    f"Using kernel {kernel_spec_name} to provide language: {kernel_language}"
+                )
+                kernel_name = kernel_spec_name
+                break
+        else:
+            log.warning(
+                "Found no matching kernel for name={kernel_name}, language={kernel_language}"
+            )
+            summary_specs = [
+                f"name={name}, language={spec.get('language')}"
+                for name, spec in kernel_specs.items()
+            ]
+            summary_specs = [str(spec) for spec in kernel_specs.items()]
+            log.warning(f"Found kernel specs: {'; '.join(summary_specs)}")
+
+    exported = executenb(nb, cwd=os.path.dirname(nb_path), kernel_name=kernel_name)
     rel_path = os.path.relpath(nb_path, os.getcwd())
     dest_path = os.path.join(output_dir, "notebooks", rel_path)
     log.info(f"Saving exported notebook to {dest_path}")
