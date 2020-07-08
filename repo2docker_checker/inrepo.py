@@ -39,7 +39,7 @@ def run_notebook(nb_path, output_dir):
 
     kernel_specs = KernelSpecManager().get_all_specs()
     kernel_info = nb.metadata.get("kernelspec") or {}
-    kernel_name = kernel_info.get("name")
+    kernel_name = kernel_info.get("name", "")
     kernel_language = kernel_info.get("language") or ""
     if kernel_name in kernel_specs:
         log.info(f"Found kernel {kernel_name}")
