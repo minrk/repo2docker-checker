@@ -71,7 +71,9 @@ def run_notebook(nb_path, output_dir):
             ]
             log.warning(f"Found kernel specs: {'; '.join(summary_specs)}")
 
-    exported = executenb(nb, cwd=os.path.dirname(nb_path), kernel_name=kernel_name)
+    exported = executenb(
+        nb, cwd=os.path.dirname(nb_path), kernel_name=kernel_name, timeout=600
+    )
     rel_path = os.path.relpath(nb_path, os.getcwd())
     dest_path = os.path.join(output_dir, "notebooks", rel_path)
     log.info(f"Saving exported notebook to {dest_path}")
