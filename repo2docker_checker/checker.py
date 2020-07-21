@@ -274,7 +274,10 @@ TestResult = namedtuple(
 
 
 def test_one_repo(repo, ref="master", run_dir="./runs", force_build=False):
-    repo_run_dir = os.path.join(run_dir, repo_slug(repo))
+    slug = repo_slug(repo).lower()
+    slug_parts = slug.split("/")
+    path = "/".join([slug_parts[0], slug_parts[1][0]] + slug_parts[1:])
+    repo_run_dir = os.path.join(run_dir, path)
     log_dir = os.path.join(repo_run_dir, "logs")
     result_dir = os.path.join(repo_run_dir, "results")
     for d in [log_dir, result_dir]:
