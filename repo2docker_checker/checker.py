@@ -149,6 +149,9 @@ def find_notebooks(path):
     Yields the path relative to the given directory
     """
     for parent, dirs, files in os.walk(path):
+        if ".ipynb_checkpoints" in parent.split(os.path.sep):
+            # skip accidentally committed checkpoints
+            continue
         for fname in files:
             if fname.endswith(".ipynb"):
                 yield os.path.relpath(os.path.join(parent, fname), path)

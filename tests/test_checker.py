@@ -2,6 +2,7 @@ import pytest
 
 from repo2docker_checker.checker import build_repo
 from repo2docker_checker.checker import clone_repo
+from repo2docker_checker.checker import find_notebooks
 from repo2docker_checker.checker import main
 
 example_repo_short = "binder-examples/requirements"
@@ -62,3 +63,19 @@ def test_example_passes():
 
 def test_example_fails():
     main([f"{example_repo_short}@{example_ref_fails}"])
+
+
+def test_find_notebooks(tmpdir):
+    repo = tmpdir.mkdir("repo")
+    checkpoints = repo.mkdir(".ipynb_checkpoints")
+    subdir = repo.mkdir("subdir")
+    nb1 = repo.join("a.ipynb")
+    nb2 = subdir.join("b.ipynb")
+    txt = subdir.join("a.txt")
+    cp = checkpoints.join("c.ipynb")
+    for f in (txt, nb1, nb2, cp):
+        with f.open("w") as _:
+            pass
+
+    notebooks = sorted(find_notebooks(str(repo)))
+    assert notebooks == [path.relto(repo) for path in (nb1, nb2)]
