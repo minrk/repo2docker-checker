@@ -348,8 +348,7 @@ def test_one_repo(repo, ref="master", run_dir="./runs", force_build=False):
 
 
 def print_summary(results, result_file, run_dir):
-    """Print a summary of th
-    """
+    """Print a summary of th"""
     build_result = results[0]
     print(
         f"Result summary for {build_result.repo}@{build_result.ref}-{build_result.resolved_ref}:"
