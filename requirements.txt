@@ -4,24 +4,46 @@
 #
 #    pip-compile
 #
-certifi==2020.6.20        # via requests
-chardet==3.0.4            # via requests
-decorator==4.4.2          # via traitlets
-docker==4.2.1             # via jupyter-repo2docker
-escapism==1.0.1           # via jupyter-repo2docker
-idna==2.10                # via requests
-ipython-genutils==0.2.0   # via traitlets
-jinja2==2.11.2            # via jupyter-repo2docker
+certifi==2022.12.7
+    # via requests
+chardet==3.0.4
+    # via requests
+decorator==4.4.2
+    # via traitlets
+docker==4.2.1
+    # via jupyter-repo2docker
+escapism==1.0.1
+    # via jupyter-repo2docker
+idna==2.10
+    # via requests
+ipython-genutils==0.2.0
+    # via traitlets
+jinja2==2.11.2
+    # via jupyter-repo2docker
 jupyter-repo2docker==0.11.0
-markupsafe==1.1.1         # via jinja2
-python-json-logger==0.1.11  # via jupyter-repo2docker
-requests==2.24.0          # via docker
-ruamel.yaml==0.16.10      # via jupyter-repo2docker
-ruamel.yaml.clib==0.2.0   # via ruamel.yaml
-semver==2.10.2            # via jupyter-repo2docker
-six==1.15.0               # via docker, traitlets, websocket-client
-toml==0.10.1              # via jupyter-repo2docker
+    # via -r requirements.in
+markupsafe==1.1.1
+    # via jinja2
+python-json-logger==0.1.11
+    # via jupyter-repo2docker
+requests==2.24.0
+    # via docker
+ruamel-yaml==0.16.10
+    # via jupyter-repo2docker
+semver==2.10.2
+    # via jupyter-repo2docker
+six==1.15.0
+    # via
+    #   docker
+    #   traitlets
+    #   websocket-client
+toml==0.10.1
+    # via jupyter-repo2docker
 tornado==6.0.4
-traitlets==4.3.3          # via jupyter-repo2docker
-urllib3==1.25.9           # via requests
-websocket-client==0.57.0  # via docker
+    # via -r requirements.in
+traitlets==4.3.3
+    # via jupyter-repo2docker
+urllib3==1.25.9
+    # via requests
+websocket-client==0.57.0
+    # via docker
