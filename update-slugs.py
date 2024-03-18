@@ -6,6 +6,7 @@ instead of github.com/Org/RePo
 
 log-paths are updated in-place in result files
 """
+
 import glob
 import os
 import sys
